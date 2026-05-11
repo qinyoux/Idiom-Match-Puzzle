@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>成语消消乐</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&display=swap');
+
+  :root {
+    --bg1: #1a1a2e;
+    --bg2: #16213e;
+    --bg3: #0f3460;
+    --gold: #D4A853;
+    --gold2: #FFD700;
+    --red: #C94043;
+    --green: #2D5F2D;
+    --paper: #f5e6d0;
+    --paper2: #ede0c8;
+    --text: #F5E6D0;
+    --card-w: 72px;
+    --card-h: 84px;
+    --slot-h: 96px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Serif SC', 'STKaiti', 'KaiTi', serif;
+    background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+    min-height: 100vh;
+    color: var(--text);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 水墨背景粒子 */
+  .ink-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    overflow: hidden;
+  }
+  .ink-circle {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,168,83,0.06) 0%, transparent 70%);
+    animation: inkFloat 8s ease-in-out infinite;
+  }
+  @keyframes inkFloat {
+    0%,100% { transform: translateY(0) scale(1); opacity: 0.4; }
+    50% { transform: translateY(-30px) scale(1.1); opacity: 0.7; }
+  }
+
+  /* ===== 页面容器 ===== */
+  .page { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; z-index: 10; transition: opacity 0.4s, transform 0.4s; }
+  .page.hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
+
+  /* ===== 主页 ===== */
+  #home-page {
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 30%, rgba(212,168,83,0.15) 0%, transparent 60%);
+  }
+  .home-title {
+    font-size: 52px; font-weight: 900;
+    background: linear-gradient(135deg, #FFD700, #D4A853, #FFD700);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    letter-spacing: 8px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 20px rgba(212,168,83,0.5));
+  }
+  .home-subtitle {
+    font-size: 16px; color: rgba(245,230,208,0.6); letter-spacing: 4px;
+    margin-bottom: 48px;
+  }
+  .home-divider {
+    width: 200px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0 auto 40px;
+  }
+
+  /* 关卡按钮区 */
+  .level-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; width: 320px; margin-bottom: 20px;
+  }
+  .level-btn {
+    position: relative; padding: 20px 16px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+    border: 1px solid rgba(212,168,83,0.3);
+    border-radius: 12px; cursor: pointer;
+    transition: all 0.3s; text-align: center;
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+  }
+  .level-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(212,168,83,0.15), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .level-btn:hover::before, .level-btn:active::before { opacity: 1; }
+  .level-btn:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(212,168,83,0.2); }
+  .level-btn.locked { opacity: 0.4; cursor: not-allowed; }
+  .level-btn.locked:hover { transform: none; box-shadow: none; }
+  .level-num { font-size: 28px; font-weight: 900; color: var(--gold); }
+  .level-name { font-size: 13px; color: var(--text); margin-top: 4px; }
+  .level-stars { font-size: 18px; margin-top: 6px; letter-spacing: 2px; }
+  .level-tag {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 10px; padding: 2px 6px; border-radius: 4px;
+    background: rgba(201,64,67,0.3); color: #ff9999; border: 1px solid rgba(201,64,67,0.4);
+  }
+  .level-tag.easy { background: rgba(45,95,45,0.3); color: #90ee90; border-color: rgba(45,95,45,0.4); }
+  .level-tag.medium { background: rgba(212,168,83,0.2); color: var(--gold); border-color: rgba(212,168,83,0.3); }
+
+  .daily-btn {
+    width: 320px; padding: 18px;
+    background: linear-gradient(135deg, rgba(201,64,67,0.2), rgba(201,64,67,0.1));
+    border: 1px solid rgba(201,64,67,0.5); border-radius: 12px;
+    cursor: pointer; text-align: center; transition: all 0.3s;
+    backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .daily-btn:hover { background: linear-gradient(135deg, rgba(201,64,67,0.35), rgba(201,64,67,0.2)); transform: translateY(-2px); }
+  .daily-icon { font-size: 28px; }
+  .daily-text { text-align: left; }
+  .daily-title { font-size: 16px; font-weight: 600; color: var(--gold); }
+  .daily-sub { font-size: 12px; color: rgba(245,230,208,0.6); margin-top: 2px; }
+
+  /* ===== 游戏页 ===== */
+  #game-page { justify-content: flex-start; }
+
+  .game-header {
+    width: 100%; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(212,168,83,0.2);
+    flex-shrink: 0;
+  }
+  .header-back {
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(212,168,83,0.3);
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    transition: all 0.2s;
+  }
+  .header-back:hover { background: rgba(212,168,83,0.2); }
+  .header-info { text-align: center; }
+  .header-level-name { font-size: 16px; font-weight: 600; color: var(--gold); }
+  .header-score { font-size: 12px; color: rgba(245,230,208,0.6); margin-top: 2px; }
+  .header-hint {
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+    background: rgba(212,168,83,0.15); border: 1px solid rgba(212,168,83,0.3);
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    transition: all 0.2s; position: relative;
+  }
+  .header-hint:hover { background: rgba(212,168,83,0.3); }
+  .hint-count {
+    position: absolute; top: -4px; right: -4px;
+    background: var(--red); color: white; font-size: 10px;
+    width: 16px; height: 16px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* 卡牌区域 */
+  .card-area {
+    flex: 1; width: 100%; position: relative; overflow: hidden;
+    min-height: 0;
+  }
+
+  /* 卡牌样式 */
+  .card {
+    position: absolute;
+    width: var(--card-w); height: var(--card-h);
+    border-radius: 10px; cursor: pointer;
+    user-select: none; -webkit-user-select: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+    will-change: transform;
+  }
+  .card-inner {
+    width: 100%; height: 100%; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #f8eedd 0%, #f0d9b8 40%, #e8ccaa 100%);
+    border: 2px solid rgba(212,168,83,0.6);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .card-inner::before {
+    content: ''; position: absolute; inset: 2px; border-radius: 8px;
+    border: 1px solid rgba(212,168,83,0.3);
+  }
+  .card-inner::after {
+    content: ''; position: absolute; inset: 0; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+  }
+  .card-text {
+    font-size: 20px; font-weight: 700; color: #3d1f00;
+    line-height: 1.2; text-align: center; position: relative; z-index: 1;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+  }
+  .card-dot {
+    position: absolute; bottom: 6px;
+    width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(212,168,83,0.5);
+  }
+  .card.blocked .card-inner {
+    background: linear-gradient(135deg, #c8b89a 0%, #b8a080 100%);
+    border-color: rgba(212,168,83,0.2);
+    filter: brightness(0.7) saturate(0.5);
+  }
+  .card.blocked { cursor: not-allowed; }
+  .card:not(.blocked):hover {
+    transform: translateY(-3px) scale(1.05);
+    z-index: 9999 !important;
+  }
+  .card:not(.blocked):hover .card-inner {
+    box-shadow: 0 8px 24px rgba(212,168,83,0.4), 0 0 0 2px var(--gold);
+  }
+  .card.selected .card-inner {
+    box-shadow: 0 0 0 3px var(--gold2), 0 8px 24px rgba(255,215,0,0.5);
+    background: linear-gradient(135deg, #fff8e8 0%, #f5e6c0 100%);
+  }
+  .card.flying {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 99999 !important;
+  }
+  .card.eliminating {
+    animation: eliminateAnim 0.5s ease-out forwards;
+  }
+  @keyframes eliminateAnim {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.8; }
+    100% { transform: scale(0) rotate(180deg); opacity: 0; }
+  }
+  .card.front-part .card-inner { border-left: 3px solid rgba(201,64,67,0.5); }
+  .card.back-part .card-inner { border-right: 3px solid rgba(45,95,45,0.5); }
+
+  /* 进度条 */
+  .progress-bar-wrap {
+    width: 100%; padding: 0 16px 6px;
+    background: rgba(0,0,0,0.2); flex-shrink: 0;
+  }
+  .progress-label { font-size: 11px; color: rgba(245,230,208,0.5); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .progress-track { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 2px; transition: width 0.5s ease; }
+
+  /* 槽位区域 */
+  .slot-area {
+    width: 100%; padding: 10px 12px;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(15px);
+    border-top: 1px solid rgba(212,168,83,0.2);
+    flex-shrink: 0;
+  }
+  .slot-label { font-size: 11px; color: rgba(245,230,208,0.4); text-align: center; margin-bottom: 8px; letter-spacing: 2px; }
+  .slots {
+    display: flex; gap: 8px; justify-content: center; align-items: center;
+    height: var(--slot-h);
+  }
+  .slot {
+    width: var(--card-w); height: var(--card-h);
+    border-radius: 10px; position: relative;
+    border: 2px dashed rgba(212,168,83,0.25);
+    background: rgba(255,255,255,0.03);
+    transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .slot.has-card { border-color: rgba(212,168,83,0.5); }
+  .slot.matching { animation: slotMatch 0.3s ease; border-color: var(--gold2); }
+  @keyframes slotMatch { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .slot-card {
+    position: absolute; inset: 0; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #f8eedd, #f0d9b8);
+    border: 2px solid rgba(212,168,83,0.6);
+    font-size: 18px; font-weight: 700; color: #3d1f00;
+    font-family: 'Noto Serif SC', serif;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .slot-card.front-part { border-left: 3px solid rgba(201,64,67,0.6); }
+  .slot-card.back-part { border-right: 3px solid rgba(45,95,45,0.6); }
+  .slot-card.eliminating { animation: eliminateAnim 0.5s ease-out forwards; }
+
+  /* ===== 弹窗 ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal {
+    background: linear-gradient(135deg, #1e1e3a, #16213e);
+    border: 1px solid rgba(212,168,83,0.4); border-radius: 20px;
+    padding: 32px 28px; text-align: center; max-width: 320px; width: 90%;
+    transform: scale(0.8) translateY(20px); transition: transform 0.3s;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(212,168,83,0.1);
+  }
+  .modal-overlay.show .modal { transform: scale(1) translateY(0); }
+  .modal-icon { font-size: 56px; margin-bottom: 12px; display: block; }
+  .modal-title { font-size: 24px; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
+  .modal-desc { font-size: 14px; color: rgba(245,230,208,0.7); line-height: 1.6; margin-bottom: 20px; }
+  .modal-score { font-size: 20px; color: var(--gold2); font-weight: 600; margin-bottom: 20px; }
+  .modal-stars { font-size: 32px; letter-spacing: 4px; margin-bottom: 12px; }
+  .modal-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .modal-btn {
+    padding: 10px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;
+    border: 1px solid rgba(212,168,83,0.4); transition: all 0.2s; font-family: inherit;
+  }
+  .modal-btn.primary { background: linear-gradient(135deg, var(--gold), #b8862e); color: #1a1a2e; border-color: var(--gold); }
+  .modal-btn.primary:hover { background: linear-gradient(135deg, var(--gold2), var(--gold)); }
+  .modal-btn.secondary { background: rgba(255,255,255,0.08); color: var(--text); }
+  .modal-btn.secondary:hover { background: rgba(255,255,255,0.15); }
+
+  /* ===== 通关页 ===== */
+  #result-page {
+    justify-content: center;
+    padding: 20px;
+  }
+  .result-title { font-size: 36px; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 8px; }
+  .result-stars { font-size: 48px; text-align: center; margin-bottom: 16px; letter-spacing: 8px; }
+  .result-score { font-size: 20px; color: var(--gold2); text-align: center; margin-bottom: 24px; }
+  .result-idioms {
+    width: 100%; max-height: 240px; overflow-y: auto;
+    background: rgba(255,255,255,0.04); border-radius: 12px;
+    border: 1px solid rgba(212,168,83,0.2); padding: 16px;
+    margin-bottom: 24px;
+  }
+  .result-idioms h3 { font-size: 14px; color: var(--gold); margin-bottom: 12px; text-align: center; }
+  .idiom-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 8px 0; border-bottom: 1px solid rgba(212,168,83,0.1);
+  }
+  .idiom-item:last-child { border-bottom: none; }
+  .idiom-word { font-size: 16px; font-weight: 600; color: var(--text); min-width: 70px; }
+  .idiom-def { font-size: 12px; color: rgba(245,230,208,0.55); line-height: 1.5; }
+  .result-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* 粒子消散效果 */
+  .particle {
+    position: fixed; pointer-events: none; z-index: 99999;
+    width: 6px; height: 6px; border-radius: 50%;
+    animation: particleFly 0.8s ease-out forwards;
+  }
+  @keyframes particleFly {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+  }
+
+  /* 分数弹出 */
+  .score-popup {
+    position: fixed; pointer-events: none; z-index: 99998;
+    font-size: 22px; font-weight: 700; color: var(--gold2);
+    text-shadow: 0 0 10px rgba(255,215,0,0.8);
+    animation: scoreFloat 1.2s ease-out forwards;
+  }
+  @keyframes scoreFloat {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-60px) scale(0.8); opacity: 0; }
+  }
+
+  /* 提示高亮 */
+  .card.hint-glow .card-inner {
+    animation: hintGlow 1s ease-in-out 3;
+  }
+  @keyframes hintGlow {
+    0%,100% { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    50% { box-shadow: 0 0 0 3px var(--gold2), 0 0 20px rgba(255,215,0,0.8); }
+  }
+
+  /* 响应式 */
+  @media (max-width: 380px) {
+    :root { --card-w: 62px; --card-h: 74px; }
+    .card-text { font-size: 17px; }
+    .slot-card { font-size: 16px; }
+  }
+  @media (min-width: 500px) {
+    :root { --card-w: 80px; --card-h: 92px; }
+    .card-text { font-size: 22px; }
+    .home-title { font-size: 60px; }
+  }
+
+  /* 成功消除闪光 */
+  .flash-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    background: radial-gradient(circle, rgba(212,168,83,0.3) 0%, transparent 70%);
+    opacity: 0; transition: opacity 0.1s;
+  }
+  .flash-overlay.active { opacity: 1; }
+
+  /* 滚动条 */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(212,168,83,0.3); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- 水墨背景 -->
+<div class="ink-bg" id="inkBg"></div>
+<div class="flash-overlay" id="flashOverlay"></div>
+
+<!-- ===== 主页 ===== -->
+<div class="page" id="home-page">
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;padding:40px 20px 20px;">
+    <div class="home-title">成语消消乐</div>
+    <div class="home-subtitle">· 以成语会千古 ·</div>
+    <div class="home-divider"></div>
+
+    <div class="level-grid">
+      <div class="level-btn" id="lvl-1" onclick="startLevel(0)">
+        <div class="level-tag easy">简单</div>
+        <div class="level-num">一</div>
+        <div class="level-name">初入门径</div>
+        <div class="level-stars" id="stars-0">☆☆☆</div>
+      </div>
+      <div class="level-btn" id="lvl-2" onclick="startLevel(1)">
+        <div class="level-tag medium">中等</div>
+        <div class="level-num">二</div>
+        <div class="level-name">渐入佳境</div>
+        <div class="level-stars" id="stars-1">☆☆☆</div>
+      </div>
+      <div class="level-btn" id="lvl-3" onclick="startLevel(2)">
+        <div class="level-tag">困难</div>
+        <div class="level-num">三</div>
+        <div class="level-name">登峰造极</div>
+        <div class="level-stars" id="stars-2">☆☆☆</div>
+      </div>
+      <div class="level-btn" id="lvl-4" onclick="startLevel(3)" style="background:linear-gradient(135deg,rgba(201,64,67,0.15),rgba(201,64,67,0.05));border-color:rgba(201,64,67,0.4);">
+        <div class="level-tag" style="background:rgba(201,64,67,0.4);color:#ffaaaa;">地狱</div>
+        <div class="level-num" style="color:#ff6b6b;">四</div>
+        <div class="level-name">万中无一</div>
+        <div class="level-stars" id="stars-3">☆☆☆</div>
+      </div>
+    </div>
+
+    <div class="daily-btn" onclick="startDaily()">
+      <div class="daily-icon">🌙</div>
+      <div class="daily-text">
+        <div class="daily-title">每日挑战</div>
+        <div class="daily-sub" id="daily-sub">今日挑战 · 极难</div>
+      </div>
+      <div style="margin-left:auto;font-size:24px;color:rgba(212,168,83,0.5);">›</div>
+    </div>
+
+    <div style="margin-top:24px;font-size:13px;color:rgba(245,230,208,0.3);text-align:center;">
+      最高分：<span id="home-best-score" style="color:var(--gold);">0</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 游戏页 ===== -->
+<div class="page hidden" id="game-page">
+  <div class="game-header">
+    <div class="header-back" onclick="showConfirmBack()">←</div>
+    <div class="header-info">
+      <div class="header-level-name" id="header-level-name">第一关</div>
+      <div class="header-score">得分：<span id="header-score">0</span></div>
+    </div>
+    <div class="header-hint" onclick="useHint()" id="hint-btn">
+      💡
+      <div class="hint-count" id="hint-count">3</div>
+    </div>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span>消除进度</span>
+      <span id="progress-text">0 / 0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="card-area" id="card-area"></div>
+
+  <div class="slot-area">
+    <div class="slot-label">— 成语拼接槽 —</div>
+    <div class="slots" id="slots">
+      <div class="slot" id="slot-0"></div>
+      <div class="slot" id="slot-1"></div>
+      <div class="slot" id="slot-2"></div>
+      <div class="slot" id="slot-3"></div>
+      <div class="slot" id="slot-4"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 通关页 ===== -->
+<div class="page hidden" id="result-page">
+  <div class="result-title" id="result-title">恭喜通关！</div>
+  <div class="result-stars" id="result-stars">⭐⭐⭐</div>
+  <div class="result-score">本关得分：<span id="result-score-val" style="color:var(--gold2);">0</span></div>
+  <div class="result-idioms">
+    <h3>📖 本关成语回顾</h3>
+    <div id="result-idiom-list"></div>
+  </div>
+  <div class="result-btns">
+    <button class="modal-btn secondary" onclick="goHome()">返回主页</button>
+    <button class="modal-btn primary" onclick="replayLevel()">再玩一次</button>
+    <button class="modal-btn primary" id="next-level-btn" onclick="nextLevel()" style="display:none;">下一关</button>
+  </div>
+</div>
+
+<!-- ===== 弹窗 ===== -->
+<div class="modal-overlay" id="fail-modal">
+  <div class="modal">
+    <span class="modal-icon">😓</span>
+    <div class="modal-title">功亏一篑</div>
+    <div class="modal-desc">槽位已满，无法继续。<br>成语之道，贵在坚持！</div>
+    <div class="modal-score">本次得分：<span id="fail-score">0</span></div>
+    <div class="modal-btns">
+      <button class="modal-btn secondary" onclick="goHome()">返回主页</button>
+      <button class="modal-btn primary" onclick="replayLevel()">再试一次</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="back-modal">
+  <div class="modal">
+    <span class="modal-icon">🚪</span>
+    <div class="modal-title">确认离开？</div>
+    <div class="modal-desc">当前进度将不会保存</div>
+    <div class="modal-btns">
+      <button class="modal-btn secondary" onclick="closeModal('back-modal')">继续游戏</button>
+      <button class="modal-btn primary" onclick="goHome()">返回主页</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 成语数据库（300条精选成语）
+// ============================================================
+const IDIOMS_DB = [
+  {w:"万紫千红",d:"形容百花盛开，色彩艳丽，比喻繁荣兴旺的景象"},
+  {w:"一石二鸟",d:"比喻一举两得，做一件事收到两个效果"},
+  {w:"守株待兔",d:"比喻死守狭隘经验，不知变通，坐等机会"},
+  {w:"掩耳盗铃",d:"比喻自欺欺人，明明掩盖不了的事偏要想法掩盖"},
+  {w:"画蛇添足",d:"比喻做了多余的事，反而弄巧成拙，不起好作用"},
+  {w:"刻舟求剑",d:"比喻拘泥成法，固执不知变通"},
+  {w:"亡羊补牢",d:"出了问题后想办法补救，可以防止继续受损失"},
+  {w:"叶公好龙",d:"比喻表面爱好某事物，实际上并不真爱好"},
+  {w:"杯弓蛇影",d:"比喻疑神疑鬼，自我惊吓"},
+  {w:"卧薪尝胆",d:"形容人刻苦自励，立志雪耻图强"},
+  {w:"破釜沉舟",d:"比喻不留退路，下定决心，一往无前"},
+  {w:"四面楚歌",d:"比喻陷入四面受敌、孤立无援的境地"},
+  {w:"完璧归赵",d:"比喻把原物完好地归还本人"},
+  {w:"负荆请罪",d:"主动向对方承认错误，请求责罚"},
+  {w:"纸上谈兵",d:"比喻空谈理论，不能解决实际问题"},
+  {w:"围魏救赵",d:"指袭击敌人后方，迫使进攻之敌撤退的战术"},
+  {w:"田忌赛马",d:"指善于利用自己的长处去对付对手的短处"},
+  {w:"三顾茅庐",d:"比喻真心诚意，一再邀请、拜访有专长的贤人"},
+  {w:"草船借箭",d:"比喻运用智谋，凭借他人的人力或财力为自己所用"},
+  {w:"望梅止渴",d:"比喻用想象中的事物来安慰自己"},
+  {w:"悬梁刺股",d:"形容刻苦学习"},
+  {w:"凿壁偷光",d:"形容家贫而读书刻苦"},
+  {w:"囊萤映雪",d:"形容不怕艰苦，刻苦读书"},
+  {w:"程门立雪",d:"比喻尊师重道，虔诚求教"},
+  {w:"牛角挂书",d:"比喻勤奋好学，随时随地学习"},
+  {w:"手不释卷",d:"书本不离手，形容勤奋好学"},
+  {w:"学而不厌",d:"学习总感到不满足，形容好学"},
+  {w:"温故知新",d:"复习旧知识，从中获得新的理解与体会"},
+  {w:"举一反三",d:"从一件事情类推而知道许多事情"},
+  {w:"融会贯通",d:"各方面的知识或道理融合领会，得到全面透彻的理解"},
+  {w:"博古通今",d:"对古代的事知道得很多，并且通晓现代的事情"},
+  {w:"才高八斗",d:"比喻人极有才华"},
+  {w:"学富五车",d:"形容读书多，学问大"},
+  {w:"出口成章",d:"张口就能成文章，形容文思敏捷，口才好"},
+  {w:"妙笔生花",d:"比喻笔法高超，作文生动"},
+  {w:"字斟句酌",d:"对每个字、每个词都仔细推敲，形容说话或写作态度慎重"},
+  {w:"出神入化",d:"形容技艺达到了绝妙的境界"},
+  {w:"炉火纯青",d:"比喻功夫达到了纯熟完美的境界"},
+  {w:"登峰造极",d:"比喻达到顶峰，也比喻做坏事猖狂到了极点"},
+  {w:"出类拔萃",d:"形容超出同类，高出众人"},
+  {w:"鹤立鸡群",d:"比喻一个人的才能或仪表在一群人里显得很突出"},
+  {w:"一鸣惊人",d:"比喻平时没有突出的表现，一下子做出惊人的成绩"},
+  {w:"脱颖而出",d:"比喻本领全部显露出来"},
+  {w:"锋芒毕露",d:"比喻锐气和才干全都显露出来，多形容人爱逞强"},
+  {w:"大器晚成",d:"形容卓越的人才需要经过长时间的磨练才能有成就"},
+  {w:"厚积薄发",d:"长时间积累，在某一时刻爆发出来"},
+  {w:"水滴石穿",d:"比喻坚持不懈，积少成多，终能成功"},
+  {w:"持之以恒",d:"有恒心地坚持下去"},
+  {w:"坚持不懈",d:"坚持到底，一点也不放松"},
+  {w:"百折不挠",d:"比喻意志坚强，无论受到多少次挫折，毫不动摇退缩"},
+  {w:"愈挫愈勇",d:"越受到挫折，越是勇猛奋进"},
+  {w:"知难而进",d:"明知困难，仍勇往直前"},
+  {w:"迎难而上",d:"面对困难不退缩，勇敢前进"},
+  {w:"马到成功",d:"事情一开始就取得成功"},
+  {w:"旗开得胜",d:"刚一出战就取得了胜利，比喻事情刚开始就取得好成绩"},
+  {w:"势如破竹",d:"形势就像劈竹子，头上几节破开以后，下面各节顺着刀势就分开了"},
+  {w:"一帆风顺",d:"形容非常顺利，没有任何阻碍"},
+  {w:"一路顺风",d:"旅途顺利，常用作祝愿语"},
+  {w:"万事如意",d:"一切事情都能如愿以偿"},
+  {w:"心想事成",d:"心里想到什么，就能实现什么"},
+  {w:"梦想成真",d:"心中的愿望变成了现实"},
+  {w:"如愿以偿",d:"按照自己的愿望得到满足，达到目的"},
+  {w:"称心如意",d:"完全合乎心意"},
+  {w:"得心应手",d:"心里怎么想手就能怎么做，形容技艺娴熟或做事顺利"},
+  {w:"游刃有余",d:"比喻做事熟练，轻而易举"},
+  {w:"信手拈来",d:"比喻写文章时词汇或材料丰富，能随手取用"},
+  {w:"胸有成竹",d:"画竹子时心里有一幅竹子的形象，比喻已有全盘计划"},
+  {w:"运筹帷幄",d:"在军帐中出谋划策，指筹划指挥"},
+  {w:"出谋划策",d:"制定计谋策略，指参与机密的谋划"},
+  {w:"深谋远虑",d:"计划得很周密，考虑得很长远"},
+  {w:"高瞻远瞩",d:"站得高，看得远，比喻眼光远大"},
+  {w:"远见卓识",d:"远大的眼光，卓越的见识"},
+  {w:"明察秋毫",d:"形容眼力极好，连极细小的事物都能看清楚"},
+  {w:"洞若观火",d:"清楚得就像看火一样，形容对事物看得非常清楚"},
+  {w:"心明眼亮",d:"看问题非常清楚，不受蒙蔽"},
+  {w:"耳聪目明",d:"形容头脑灵活，聪明伶俐"},
+  {w:"聪明伶俐",d:"形容人头脑机灵，行动敏捷"},
+  {w:"机智过人",d:"机敏聪慧，超过一般人"},
+  {w:"足智多谋",d:"富有智慧，善于谋划"},
+  {w:"神机妙算",d:"惊人的机智，巧妙的计谋"},
+  {w:"料事如神",d:"预料事情如同神人一样，比喻判断正确"},
+  {w:"未卜先知",d:"不用占卜就能知道，形容预知能力极强"},
+  {w:"先见之明",d:"事先就有判断情况的能力"},
+  {w:"一目了然",d:"一眼就看得很清楚"},
+  {w:"显而易见",d:"形容事情或道理很明显，极容易看清楚"},
+  {w:"不言而喻",d:"不用说就可以明白，形容道理很明显"},
+  {w:"理所当然",d:"事情的道理就应该是这样，没有任何疑问"},
+  {w:"毋庸置疑",d:"不需要怀疑，是确实的"},
+  {w:"无可厚非",d:"没有什么可以过分责怪的，表示并不赞成，但可以原谅"},
+  {w:"无懈可击",d:"没有漏洞可以利用或指责，形容十分严密"},
+  {w:"天衣无缝",d:"神话中仙女穿的天衣，没有缝儿，比喻做事严密，看不出破绽"},
+  {w:"完美无缺",d:"没有任何缺点，形容非常完美"},
+  {w:"无与伦比",d:"没有能够与它相比的，形容极为突出"},
+  {w:"首屈一指",d:"屈指计算，首先弯下大拇指，表示第一，指最好的"},
+  {w:"独占鳌头",d:"占据第一名的地位"},
+  {w:"名列前茅",d:"比喻名次排在前面"},
+  {w:"出人头地",d:"超出众人，高人一等"},
+  {w:"扶摇直上",d:"形容地位、名誉等迅速上升"},
+  {w:"平步青云",d:"指人的地位、官职等突然升高"},
+  {w:"鸿鹄之志",d:"鸿鹄志向高远，比喻远大志向"},
+  {w:"壮志凌云",d:"志气高得与云端相比，形容志向远大"},
+  {w:"凌云壮志",d:"形容志气高远，追求崇高理想"},
+  {w:"雄心壮志",d:"强烈的理想和宏大的志向"},
+  {w:"立志图强",d:"树立志向，谋求强大"},
+  {w:"奋发图强",d:"振作精神，努力求进步"},
+  {w:"发愤忘食",d:"努力学习或工作，连吃饭都忘了，形容十分勤奋"},
+  {w:"废寝忘食",d:"顾不得睡觉，忘记了吃饭，形容专心努力"},
+  {w:"焚膏继晷",d:"点上油灯，接续日光，形容夜以继日地工作"},
+  {w:"宵衣旰食",d:"天不亮就穿衣起来，天黑了才吃饭，形容勤于政事"},
+  {w:"埋头苦干",d:"专心一意地刻苦工作"},
+  {w:"勤勤恳恳",d:"形容勤劳踏实"},
+  {w:"任劳任怨",d:"做事不辞劳苦，不怕别人埋怨"},
+  {w:"鞠躬尽瘁",d:"指不辞辛苦，尽心尽力，到死为止"},
+  {w:"死而后已",d:"死了以后才停止，形容为完成一种责任而奋斗终生"},
+  {w:"精忠报国",d:"为国家竭尽忠诚，牺牲一切"},
+  {w:"舍身取义",d:"为了正义事业而牺牲生命"},
+  {w:"大义凛然",d:"形容为了维护正义，不顾个人安危，态度十分严正"},
+  {w:"浩然正气",d:"正大刚直的精神或气质"},
+  {w:"两袖清风",d:"比喻为官廉洁，不贪财货"},
+  {w:"廉洁奉公",d:"廉洁不贪污，一心为公"},
+  {w:"克己奉公",d:"严格要求自己，以公事为重"},
+  {w:"公而忘私",d:"为了公事忘了个人利益，一心为公"},
+  {w:"大公无私",d:"完全为了人民的利益，没有自私自利之心"},
+  {w:"无私奉献",d:"毫不自私地把自己的一切贡献出去"},
+  {w:"舍己为人",d:"牺牲自己的利益，去帮助或有益于他人"},
+  {w:"助人为乐",d:"帮助别人并以此为乐趣"},
+  {w:"乐善好施",d:"心地善良，喜欢做好事，乐于施舍钱财救助贫困"},
+  {w:"广结善缘",d:"结交许多善缘，广泛与人交好"},
+  {w:"与人为善",d:"赞助人家的优点和长处，后泛指善意地帮助人"},
+  {w:"推己及人",d:"用自己的心意去推想别人的心意，设身处地替别人着想"},
+  {w:"将心比心",d:"用自己的心意来比照别人的心意，指遇事要设身处地替别人想想"},
+  {w:"设身处地",d:"设想自己处在别人的那种境地，指替别人的处境着想"},
+  {w:"换位思考",d:"站在对方的立场思考问题"},
+  {w:"以德报怨",d:"不记别人的仇，反而给他好处"},
+  {w:"宽宏大量",d:"度量宽大，能容人"},
+  {w:"海纳百川",d:"大海可以容纳所有的江河，比喻包容的胸怀"},
+  {w:"博大精深",d:"形容思想和学识广博高深"},
+  {w:"源远流长",d:"源头很远，流程很长，比喻历史悠久"},
+  {w:"历史悠久",d:"距今时间久远，有很长的历史"},
+  {w:"古色古香",d:"形容器物书画等富有古雅的色彩和情调"},
+  {w:"流芳百世",d:"好名声永远流传"},
+  {w:"名垂青史",d:"好名声永远留在历史记载里"},
+  {w:"永垂不朽",d:"精神、业绩等永远不会磨灭"},
+  {w:"万古长青",d:"形容崇高的精神或深厚的友谊永远不会消失"},
+  {w:"经久不衰",d:"持续很长时间不衰退"},
+  {w:"长盛不衰",d:"长期兴盛，没有衰落"},
+  {w:"蓬勃发展",d:"充满生机，向前发展"},
+  {w:"欣欣向荣",d:"形容草木茂盛的样子，比喻事业蓬勃发展，兴旺昌盛"},
+  {w:"朝气蓬勃",d:"形容充满生气和活力"},
+  {w:"生机勃勃",d:"形容自然界充满生命力，或社会生活活跃"},
+  {w:"充满活力",d:"形容充满生命力和朝气"},
+  {w:"春意盎然",d:"春天的气氛强烈而浓厚"},
+  {w:"春暖花开",d:"春天气候温暖，百花盛开，景色优美"},
+  {w:"百花争艳",d:"各种花草争奇斗艳，形容百花盛开、万紫千红的景象"},
+  {w:"鸟语花香",d:"鸟叫得好听，花开得喷香，形容春天的美好景象"},
+  {w:"风和日丽",d:"微风和煦，阳光明丽，形容天气晴和"},
+  {w:"晴空万里",d:"晴朗的天空一望无际"},
+  {w:"碧空如洗",d:"蓝色的天空像洗过一样，非常清洁，比喻天气晴朗"},
+  {w:"山清水秀",d:"山水清幽秀丽，形容风景优美"},
+  {w:"如诗如画",d:"形容风光美丽，好像诗画中描绘的一样"},
+  {w:"美不胜收",d:"美好的东西太多，一时接受不完"},
+  {w:"赏心悦目",d:"指因看到美好的景物而心情舒畅"},
+  {w:"心旷神怡",d:"心情愉快，精神舒畅"},
+  {w:"怡然自得",d:"形容喜悦而满足的样子"},
+  {w:"悠然自得",d:"形容自由清闲，心情舒畅"},
+  {w:"逍遥自在",d:"无拘无束，自由自在"},
+  {w:"无忧无虑",d:"没有任何忧愁和顾虑"},
+  {w:"轻松愉快",d:"心情轻松、愉快"},
+  {w:"欢天喜地",d:"形容非常高兴的样子"},
+  {w:"喜出望外",d:"遇到意想不到的喜事而特别高兴"},
+  {w:"大喜过望",d:"结果比预期的还好，因而感到特别高兴"},
+  {w:"欣喜若狂",d:"形容非常喜悦与激动"},
+  {w:"兴高采烈",d:"兴致高，精神饱满"},
+  {w:"神采飞扬",d:"形容精神焕发，意气风发"},
+  {w:"精神焕发",d:"精神振奋，焕然一新"},
+  {w:"神清气爽",d:"形容人神志清爽，心情舒畅"},
+  {w:"容光焕发",d:"脸上的光彩焕然一新，形容精神好，有活力"},
+  {w:"神采奕奕",d:"形容精神旺盛，容光焕发"},
+  {w:"英姿飒爽",d:"英俊威武的姿态，生动形象地描述矫健威武的风采"},
+  {w:"威风凛凛",d:"形容声势或气派使人敬畏"},
+  {w:"气宇轩昂",d:"形容人精力充沛，风度不凡"},
+  {w:"风度翩翩",d:"举止洒脱，行为举止的姿态出众"},
+  {w:"文质彬彬",d:"原形容人既文雅又朴实，后形容文雅有礼貌"},
+  {w:"温文尔雅",d:"态度温和，举止文雅"},
+  {w:"彬彬有礼",d:"形容文雅而有礼貌"},
+  {w:"谦虚谨慎",d:"形容人虚心不浮夸，谨慎不马虎"},
+  {w:"虚怀若谷",d:"胸怀像山谷那样深广，形容十分谦虚"},
+  {w:"谦逊有礼",d:"谦虚、顺服而有礼节"},
+  {w:"礼贤下士",d:"旧时指有地位的人能降低身份，礼貌地对待有才学的人"},
+  {w:"尊师重道",d:"尊敬师长，重视道义"},
+  {w:"言行一致",d:"说的和做的完全一致"},
+  {w:"表里如一",d:"思想言行和内心想法完全一致"},
+  {w:"言必信行必果",d:"说到做到，行动果断"},
+  {w:"一诺千金",d:"许下的一个诺言有千金的价值，比喻说话算数，极有信用"},
+  {w:"诚实守信",d:"为人诚实，遵守信用"},
+  {w:"信守承诺",d:"严格按照承诺或约定做事"},
+  {w:"言而有信",d:"说话靠得住，有信用"},
+  {w:"心口如一",d:"想的和说的一样，形容诚实直爽"},
+  {w:"实事求是",d:"指按照事物的实际情况办事"},
+  {w:"脚踏实地",d:"比喻做事认真，不浮躁"},
+  {w:"稳扎稳打",d:"稳当而有把握地打仗，比喻有把握、有步骤地工作"},
+  {w:"步步为营",d:"每走一步就设一处营垒，形容行动谨慎、防守严密"},
+  {w:"谋定而动",d:"谋划妥当之后再行动"},
+  {w:"三思而行",d:"经过再三考虑，然后再去做"},
+  {w:"慎重其事",d:"认真对待某件事情"},
+  {w:"一丝不苟",d:"形容办事认真，连最细小的地方也不马虎"},
+  {w:"精益求精",d:"好了还求更好"},
+  {w:"百尺竿头",d:"比喻学问、成绩等达到一定高度，还需继续努力取得进步"},
+  {w:"更上一层",d:"比喻再前进一步，更加进步"},
+  {w:"锲而不舍",d:"不断地镂刻，比喻有恒心，有毅力"},
+  {w:"坚韧不拔",d:"坚固有韧性，不可拔除，形容意志坚强，不可动摇"},
+  {w:"顽强拼搏",d:"精神倔强、不屈服、用极大努力去争取成功"},
+  {w:"勇往直前",d:"勇敢地一直向前进"},
+  {w:"义无反顾",d:"在道义上只有勇往直前，不能退缩回头"},
+  {w:"无所畏惧",d:"什么都不怕，形容非常英勇"},
+  {w:"临危不惧",d:"遇到危险时一点也不惧怕"},
+  {w:"泰然处之",d:"处理事情时态度安定、镇然处之"},
+  {w:"处变不惊",d:"面对变乱，能镇定自若，毫不惊慌"},
+  {w:"镇定自若",d:"面对灾难时表情镇定，不改常态"},
+  {w:"泰然自若",d:"不以为意，神情如常，形容在紧急情况下沉着镇定"},
+  {w:"从容不迫",d:"不慌不忙，沉着镇定"},
+  {w:"沉着冷静",d:"在情况紧急时，能镇定下来，冷静思考"},
+  {w:"冷静沉着",d:"沉着冷静，不慌乱"},
+  {w:"处事不惊",d:"遇到事情沉着冷静，不显慌乱"},
+  {w:"举重若轻",d:"举起重物如同举起轻物，形容做繁难的事或者处理棘手的问题轻松不费力"},
+  {w:"举轻若重",d:"对微小的事情也认真对待"},
+  {w:"审时度势",d:"详细考虑当时的情况，估计形势的发展趋势"},
+  {w:"因地制宜",d:"根据不同地区的具体情况，制定合适的政策或措施"},
+  {w:"因势利导",d:"顺着事情发展的趋势，加以引导"},
+  {w:"顺势而为",d:"顺应时势而做事"},
+  {w:"随机应变",d:"随着情况的变化灵活机动地应付"},
+  {w:"机变无常",d:"随机应变，灵活自如"},
+  {w:"灵活多变",d:"变化多端，多种多样"},
+  {w:"变化多端",d:"变化多样，没有规律可循"},
+  {w:"层出不穷",d:"接连不断地出现，没有穷尽"},
+  {w:"日新月异",d:"每天每月都有新的变化，形容发展进步迅速"},
+  {w:"突飞猛进",d:"形容进步和发展特别迅速"},
+  {w:"一日千里",d:"形容进步或发展极快"},
+  {w:"突破创新",d:"打破旧框框，创立新事物"},
+  {w:"推陈出新",d:"去掉旧事物的糟粕，取其精华，并使它向新的方向发展"},
+  {w:"革故鼎新",d:"革除旧的，建立新的，形容除旧布新"},
+  {w:"除旧布新",d:"去掉旧的，建立新的"},
+  {w:"改天换地",d:"彻底改变原来的面貌，形容变化很大"},
+  {w:"翻天覆地",d:"形容变化巨大而彻底"},
+  {w:"沧海桑田",d:"大海变成农田，农田变成大海，比喻世事变化很大"},
+  {w:"物是人非",d:"东西还是原来的东西，可是人已不是原来的人了，多用于表达事过境迁"},
+  {w:"时过境迁",d:"时间一过，情况就有了变化，不能再一概而论"},
+  {w:"时移世易",d:"时代变了，事物也跟着变化了"},
+  {w:"与时俱进",d:"随着时代的发展而不断进步和发展"},
+  {w:"顺应时代",d:"适应时代的要求"},
+  {w:"应运而生",d:"顺应时势的需要而产生"},
+  {w:"应时而出",d:"顺应时机出现"},
+  {w:"顺水推舟",d:"比喻顺着某种趋势或情况办事"},
+  {w:"因循守旧",d:"沿袭旧例，不知改进，形容保守落后"},
+  {w:"墨守成规",d:"指思想保守，守着老规矩不肯改变"},
+  {w:"固步自封",d:"比喻守着老一套，不求进取"},
+  {w:"故步自封",d:"比喻安于现状，不求上进"},
+  {w:"夜郎自大",d:"比喻人无知而又狂妄自大"},
+  {w:"骄傲自满",d:"自高自大，满足于已取得的成绩"},
+  {w:"自以为是",d:"认为自己的看法和做法都正确，不接受别人的意见"},
+  {w:"刚愎自用",d:"依仗自己的才能，专横独断，不听别人意见"},
+  {w:"独断专行",d:"行事专断，不考虑别人的意见"},
+  {w:"一意孤行",d:"不听劝告，固执地照自己的意思行事"},
+  {w:"执迷不悟",d:"对事物认识不清而固执，不知觉悟"},
+  {w:"死不悔改",d:"到死也不悔改"},
+  {w:"冥顽不灵",d:"形容顽固不化，不明事理"},
+  {w:"顽固不化",d:"顽固而不会改变"},
+  {w:"死心塌地",d:"形容主意已定，决不改变"},
+  {w:"一心一意",d:"只有一个心眼儿，没有别的考虑"},
+  {w:"专心致志",d:"把心思全放在上面，形容一心一意，聚精会神"},
+  {w:"聚精会神",d:"形容专注地思考或观看"},
+  {w:"全神贯注",d:"全部精神集中在一点上，形容注意力高度集中"},
+  {w:"心无旁骛",d:"心中没有另外的杂念，形容心思专一"},
+  {w:"一心扑上",d:"全力以赴地投入某事"},
+  {w:"全力以赴",d:"把全部力量都投入进去"},
+  {w:"竭尽全力",d:"用尽全部力量"},
+  {w:"倾尽所有",d:"把所有的都拿出来"},
+  {w:"倾囊相授",d:"把全部的知识都传授给对方"},
+  {w:"尽心尽力",d:"费尽心思和力量"},
+  {w:"尽职尽责",d:"完全履行职责，做好工作"},
+  {w:"兢兢业业",d:"形容做事谨慎，勤奋认真"},
+  {w:"勤勉谨慎",d:"勤奋且谨慎"},
+  {w:"谨小慎微",d:"每件小事都十分谨慎，不敢疏忽"},
+  {w:"如履薄冰",d:"像走在薄冰上一样，形容行事极为谨慎"},
+  {w:"如临深渊",d:"如同面临深深的渊谷，形容做事非常小心谨慎"},
+  {w:"如坐针毡",d:"形容心神不宁，坐立不安"},
+  {w:"坐立不安",d:"坐着也不是，站着也不是，形容心情焦急紧张"},
+  {w:"心急如焚",d:"心里急得像着了火一样，形容心情十分焦急"},
+  {w:"急不可待",d:"急迫得不能等待"},
+  {w:"迫不及待",d:"急迫得不能等待，形容心情急切"},
+  {w:"燃眉之急",d:"火烧眉毛那样的紧急，形容事情非常紧急"},
+  {w:"危在旦夕",d:"形容危险就在眼前"},
+  {w:"千钧一发",d:"比喻万分危急或异常紧要的关头"},
+  {w:"岌岌可危",d:"形容非常危险，快要倾覆或灭亡"},
+  {w:"摇摇欲坠",d:"形容就要倒塌、下落或灭亡"},
+  {w:"奄奄一息",d:"形容只剩下一口气，临近死亡"},
+  {w:"垂死挣扎",d:"在临近死亡时拼命挣扎"},
+  {w:"困兽犹斗",d:"被围困的野兽还要作最后挣扎，比喻在绝境中还要挣扎"},
+  {w:"背水一战",d:"比喻在艰难情况下跟敌人决一死战"},
+  {w:"绝处逢生",d:"在极其危险的境地里遇到了生路"},
+  {w:"峰回路转",d:"山势回绕，路也跟着拐弯，比喻坏事变好事"},
+  {w:"柳暗花明",d:"绿柳成阴，鲜花明丽，形容美丽的春日景色，也形容困境中突然出现转机"},
+  {w:"化险为夷",d:"变危险为平安"},
+  {w:"转危为安",d:"由危险转变为平安"},
+  {w:"否极泰来",d:"逆境达到极点，就会向顺境转化，指坏运到了头，好运就来了"},
+  {w:"苦尽甘来",d:"吃尽了苦头之后，甜蜜的日子来了"},
+  {w:"苦尽甜来",d:"苦难到了尽头，美好生活就来了"},
+  {w:"雨过天晴",d:"比喻艰难时期过去之后，出现了美好的境况"},
+  {w:"拨云见日",d:"拨开云雾，看见太阳，比喻冲破黑暗，见到光明"},
+  {w:"重见天日",d:"比喻脱离黑暗，重见光明"},
+  {w:"光明正大",d:"形容心怀坦白，言行正派"},
+  {w:"正大光明",d:"形容正派，不行私曲"},
+  {w:"公正廉明",d:"公平正直，廉洁高尚"},
+  {w:"刚正不阿",d:"态度正直，不阿谀奉迎"},
+  {w:"铁面无私",d:"形容公正严明，不怕权势"},
+  {w:"秉公执法",d:"公正地执行法律"},
+  {w:"法网恢恢",d:"形容法律制度严密，执法严厉"},
+  {w:"天网恢恢",d:"天道像广阔的大网，坏人终究难逃惩处"},
+  {w:"善恶有报",d:"做了好事或坏事终究都会得到回报"},
+  {w:"因果报应",d:"佛教观念，认为事情有其因果关系，有善恶之报"},
+  {w:"恩将仇报",d:"用仇恨回报恩人，忘恩负义"},
+  {w:"忘恩负义",d:"忘记别人给予的恩惠，做对不起恩人的事"},
+  {w:"过河拆桥",d:"比喻达到目的以后，就把帮助过自己的人一脚踢开"},
+  {w:"卸磨杀驴",d:"比喻把曾经为自己效力的人抛弃或加以迫害"},
+  {w:"落井下石",d:"比喻乘人之危，加以打击陷害"},
+  {w:"趁火打劫",d:"趁别人有危难的时候，从中捞取好处"},
+  {w:"乘人之危",d:"趁别人危难的时候侵害他"},
+  {w:"落石下井",d:"趁危难时加以陷害"},
+  {w:"雪上加霜",d:"比喻接连遭受灾难，处境越来越难"},
+  {w:"祸不单行",d:"指不幸的事情总是接连不断地发生"},
+  {w:"福无双至",d:"旧时相传，幸福不会同时来临，倒霉的事常常接连发生"},
+  {w:"祸从天降",d:"比喻无缘无故遭到意外的祸害"},
+  {w:"天降横祸",d:"从天上降下无端的祸患"},
+  {w:"无妄之灾",d:"无缘无故受到的祸害"},
+  {w:"飞来横祸",d:"无缘无故受到的祸害"},
+  {w:"祸国殃民",d:"使国家受祸，人民受难"},
+  {w:"危害社会",d:"对社会造成损害"},
+  {w:"损人利己",d:"损害别人，使自己得到好处"},
+  {w:"自私自利",d:"只为自己打算，为小团体谋利益"},
+  {w:"见利忘义",d:"看到财利，就忘掉了道义"},
+  {w:"唯利是图",d:"只贪图利益，不顾道义"},
+  {w:"贪得无厌",d:"贪图财物没有满足的时候"},
+  {w:"贪婪成性",d:"贪婪成为本性"},
+  {w:"欲壑难填",d:"欲望如同深谷，难以填满，比喻贪婪成性"},
+  {w:"利欲熏心",d:"贪图名利的欲望迷住了心窍"},
+  {w:"铤而走险",d:"指在走投无路时采取冒险行动"},
+  {w:"孤注一掷",d:"把全部的钱都押上去，比喻在危急时把全部力量拿出来做最后的挣扎"},
+  {w:"破罐破摔",d:"比喻已经打破的罐子索性再摔，比喻已犯错误，索性放任自流"},
+  {w:"自暴自弃",d:"自己糟蹋自己，自己抛弃自己，形容不求上进，甘心落后"},
+  {w:"一蹶不振",d:"跌倒了再也爬不起来，比喻遭受一次挫折以后就再也振作不起来"},
+  {w:"一败涂地",d:"形容失败到了不可收拾的地步"},
+  {w:"落花流水",d:"原形容残春景色，也比喻惨败零落"},
+  {w:"大势已去",d:"形容有利的局势已经失去"},
+  {w:"回天乏术",d:"力量不足以改变现状，比喻事情已无法挽回"},
+  {w:"无力回天",d:"形容事情已无法挽回"},
+  {w:"无能为力",d:"用不上力量，没有能力去做或没有力量去做某件事"},
+  {w:"束手无策",d:"遇到问题，毫无解决的办法"},
+  {w:"无计可施",d:"没有什么计谋可以施展，一点办法也没有"},
+  {w:"一筹莫展",d:"一点计策也施展不出，一点办法也想不出来"},
+  {w:"黔驴技穷",d:"比喻有限的一点技本领也已经用完了"},
+  {w:"江郎才尽",d:"比喻才思减退"},
+  {w:"才思枯竭",d:"才思枯竭，无法有所创新"},
+  {w:"灵感枯竭",d:"没有新的灵感和创意"},
+  {w:"思如泉涌",d:"思路像泉水一样不断涌现，形容思路开阔灵活"},
+  {w:"文如泉涌",d:"文章写起来像泉水涌出，形容文思敏捷"},
+  {w:"下笔如神",d:"下笔如同神助，形容写作才能极高"},
+  {w:"笔走龙蛇",d:"形容书法生动而有气势"},
+  {w:"行云流水",d:"形容文章自然不受约束，就像漂浮着的云和流动的水一样"},
+  {w:"酣畅淋漓",d:"形容文章、书法等非常流畅，充分表达了情感"},
+  {w:"一气呵成",d:"一口气做成，形容文章结构紧凑，文气连贯"},
+  {w:"浑然天成",d:"形容技艺精湛自然，毫无矫揉造作"},
+  {w:"天马行空",d:"比喻思维活跃，不受约束"},
+  {w:"异想天开",d:"比喻胡想，想那些根本无法实现的事"},
+  {w:"匪夷所思",d:"指言谈行动超出常情，不是一般人所能想到的"},
+  {w:"出人意料",d:"超出人的意料，令人吃惊"},
+  {w:"意想不到",d:"料想不到，出乎意料"},
+  {w:"喜出望外",d:"遇到意外的好事，心中非常高兴"},
+  {w:"大吃一惊",d:"形容非常吃惊"},
+  {w:"目瞪口呆",d:"形容因吃惊或害怕而发愣的样子"},
+  {w:"瞠目结舌",d:"瞪着眼睛，说不出话来，形容窘迫或惊呆的样子"},
+  {w:"哑口无言",d:"像哑巴一样说不出话来，形容理屈词穷的样子"},
+  {w:"无言以对",d:"没有话可以回答"},
+  {w:"哑然失笑",d:"忍不住笑出声来"},
+  {w:"捧腹大笑",d:"用手捧住肚子大笑，形容遇到极可笑之事时笑个不停"},
+  {w:"前仰后合",d:"形容大笑时身体前后摇晃的样子"},
+  {w:"笑逐颜开",d:"笑得使面容舒展开来，形容满脸笑容，十分高兴的样子"},
+  {w:"乐不可支",d:"快乐得不能自持，形容快乐到了极点"}
+];
+
+// 过滤确保成语是4个字
+const IDIOMS = IDIOMS_DB.filter(i => [...i.w].length === 4);
+
+// ============================================================
+// 游戏配置
+// ============================================================
+const LEVELS = [
+  { name: "第一关·初入门径", chengyuCount: 10, layers: 2, hintCount: 3, pointPerPair: 100 },
+  { name: "第二关·渐入佳境", chengyuCount: 20, layers: 3, hintCount: 2, pointPerPair: 150 },
+  { name: "第三关·登峰造极", chengyuCount: 30, layers: 4, hintCount: 1, pointPerPair: 200 },
+  { name: "第四关·万中无一", chengyuCount: 40, layers: 5, hintCount: 0, pointPerPair: 300 }
+];
+
+const SLOT_MAX = 5;
+const CARD_W = 72;
+const CARD_H = 84;
+
+// ============================================================
+// 游戏状态
+// ============================================================
+let gameState = {
+  level: 0,
+  isDaily: false,
+  cards: [],
+  slots: [],
+  score: 0,
+  totalPairs: 0,
+  clearedPairs: 0,
+  hints: 3,
+  usedIdioms: [],
+  startTime: 0
+};
+
+let saveData = {
+  levelStars: [0, 0, 0, 0],
+  bestScore: 0,
+  dailyClearDate: null
+};
+
+// ============================================================
+// 存档
+// ============================================================
+function loadSave() {
+  try {
+    const d = localStorage.getItem('chengyu_save');
+    if (d) saveData = { ...saveData, ...JSON.parse(d) };
+  } catch(e) {}
+  updateHomeUI();
+}
+function writeSave() {
+  try { localStorage.setItem('chengyu_save', JSON.stringify(saveData)); } catch(e) {}
+}
+function updateHomeUI() {
+  const starStr = ['☆☆☆','★☆☆','★★☆','★★★'];
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById(`stars-${i}`);
+    if (el) el.textContent = starStr[saveData.levelStars[i] || 0];
+    if (saveData.levelStars[i] > 0) {
+      const btn = document.getElementById(`lvl-${i+1}`);
+      if (btn) btn.style.borderColor = 'rgba(212,168,83,0.6)';
+    }
+  }
+  document.getElementById('home-best-score').textContent = saveData.bestScore || 0;
+  const dateStr = getTodayStr();
+  document.getElementById('daily-sub').textContent = `今日挑战 ${dateStr} · 极难`;
+}
+
+// ============================================================
+// 伪随机数生成器（Mulberry32）
+// ============================================================
+function createRng(seed) {
+  let s = seed;
+  return function() {
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function getTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+function getDailySeed() { return parseInt(getTodayStr()); }
+
+// ============================================================
+// 页面切换
+// ============================================================
+function showPage(id) {
+  ['home-page','game-page','result-page'].forEach(p => {
+    document.getElementById(p).classList.add('hidden');
+  });
+  document.getElementById(id).classList.remove('hidden');
+}
+function goHome() {
+  closeModal('fail-modal'); closeModal('back-modal');
+  showPage('home-page');
+  updateHomeUI();
+}
+function showConfirmBack() { showModal('back-modal'); }
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ============================================================
+// 开始游戏
+// ============================================================
+function startLevel(levelIdx) {
+  gameState.level = levelIdx;
+  gameState.isDaily = false;
+  const rng = createRng(Date.now() + levelIdx * 999);
+  initGame(LEVELS[levelIdx], rng, levelIdx);
+}
+function startDaily() {
+  gameState.level = -1;
+  gameState.isDaily = true;
+  const cfg = { name: "每日挑战·绝境突破", chengyuCount: 40, layers: 5, hintCount: 0, pointPerPair: 500 };
+  const rng = createRng(getDailySeed());
+  initGame(cfg, rng, -1);
+}
+
+function initGame(levelCfg, rng, levelIdx) {
+  // 选取成语
+  const shuffled = [...IDIOMS].sort(() => rng() - 0.5);
+  const chosen = shuffled.slice(0, Math.min(levelCfg.chengyuCount, IDIOMS.length));
+  gameState.usedIdioms = chosen;
+  gameState.score = 0;
+  gameState.clearedPairs = 0;
+  gameState.totalPairs = chosen.length;
+  gameState.slots = [];
+  gameState.hints = levelCfg.hintCount;
+  gameState.startTime = Date.now();
+
+  // 更新header
+  document.getElementById('header-level-name').textContent = levelCfg.name;
+  document.getElementById('header-score').textContent = '0';
+  document.getElementById('hint-count').textContent = levelCfg.hintCount;
+  document.getElementById('hint-btn').style.opacity = levelCfg.hintCount > 0 ? '1' : '0.3';
+
+  // 生成卡牌数据
+  const cardData = [];
+  chosen.forEach((idiom, idx) => {
+    const chars = [...idiom.w];
+    cardData.push({ chengyuIdx: idx, chengyu: idiom.w, part: 'front', text: chars[0]+chars[1] });
+    cardData.push({ chengyuIdx: idx, chengyu: idiom.w, part: 'back',  text: chars[2]+chars[3] });
+  });
+  // 乱序
+  cardData.sort(() => rng() - 0.5);
+
+  // 计算布局
+  const area = document.getElementById('card-area');
+  const aW = area.clientWidth || 360;
+  const aH = area.clientHeight || 460;
+  const cardW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w')) || CARD_W;
+  const cardH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-h')) || CARD_H;
+
+  // 网格布局参数
+  const totalCards = cardData.length;
+  const layers = levelCfg.layers;
+  const cardsPerLayer = Math.ceil(totalCards / layers);
+  const cols = Math.ceil(Math.sqrt(cardsPerLayer * (aW / aH)));
+  const rows = Math.ceil(cardsPerLayer / cols);
+  const cellW = aW / cols;
+  const cellH = aH / rows;
+
+  gameState.cards = [];
+  let dataIdx = 0;
+
+  for (let layer = 0; layer < layers && dataIdx < totalCards; layer++) {
+    const layerCount = Math.min(cardsPerLayer, totalCards - dataIdx);
+    const layerCols = Math.min(cols, layerCount);
+    const layerRows = Math.ceil(layerCount / layerCols);
+    const cellWL = aW / layerCols;
+    const cellHL = aH / layerRows;
+    const maxOffset = Math.min(cellWL, cellHL) * 0.3;
+
+    for (let i = 0; i < layerCount && dataIdx < totalCards; i++) {
+      const col = i % layerCols;
+      const row = Math.floor(i / layerCols);
+      const baseX = col * cellWL + (cellWL - cardW) / 2;
+      const baseY = row * cellHL + (cellHL - cardH) / 2;
+      const ox = (rng() - 0.5) * 2 * maxOffset;
+      const oy = (rng() - 0.5) * 2 * maxOffset;
+      const x = Math.max(0, Math.min(aW - cardW, baseX + ox));
+      const y = Math.max(0, Math.min(aH - cardH, baseY + oy));
+
+      const cd = cardData[dataIdx];
+      gameState.cards.push({
+        id: dataIdx,
+        chengyuIdx: cd.chengyuIdx,
+        chengyu: cd.chengyu,
+        part: cd.part,
+        text: cd.text,
+        x, y,
+        layer,
+        blocked: false,
+        eliminated: false
+      });
+      dataIdx++;
+    }
+  }
+
+  // 计算遮挡
+  updateBlockedState();
+
+  // 渲染
+  renderCards();
+  renderSlots();
+  updateProgress();
+
+  showPage('game-page');
+}
+
+// ============================================================
+// 遮挡检测
+// ============================================================
+function updateBlockedState() {
+  const cardW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w')) || CARD_W;
+  const cardH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-h')) || CARD_H;
+
+  gameState.cards.forEach(card => {
+    if (card.eliminated) return;
+    card.blocked = false;
+    // 检测是否有更高层的牌遮挡超过30%
+    for (const other of gameState.cards) {
+      if (other.eliminated || other.id === card.id || other.layer <= card.layer) continue;
+      // 矩形重叠
+      const overlapX = Math.max(0, Math.min(card.x + cardW, other.x + cardW) - Math.max(card.x, other.x));
+      const overlapY = Math.max(0, Math.min(card.y + cardH, other.y + cardH) - Math.max(card.y, other.y));
+      const overlapArea = overlapX * overlapY;
+      const cardArea = cardW * cardH;
+      if (overlapArea / cardArea > 0.3) {
+        card.blocked = true;
+        break;
+      }
+    }
+  });
+}
+
+// ============================================================
+// 渲染卡牌
+// ============================================================
+function renderCards() {
+  const area = document.getElementById('card-area');
+  area.innerHTML = '';
+  const cardW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w')) || CARD_W;
+  const cardH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-h')) || CARD_H;
+
+  gameState.cards.forEach(card => {
+    if (card.eliminated) return;
+    const el = document.createElement('div');
+    el.className = `card ${card.part === 'front' ? 'front-part' : 'back-part'}${card.blocked ? ' blocked' : ''}`;
+    el.id = `card-${card.id}`;
+    el.style.left = card.x + 'px';
+    el.style.top = card.y + 'px';
+    el.style.zIndex = card.layer * 100 + card.id;
+    el.style.width = cardW + 'px';
+    el.style.height = cardH + 'px';
+
+    el.innerHTML = `<div class="card-inner"><div class="card-text">${card.text}</div><div class="card-dot"></div></div>`;
+
+    if (!card.blocked) {
+      el.addEventListener('click', () => clickCard(card.id));
+      el.addEventListener('touchend', (e) => { e.preventDefault(); clickCard(card.id); });
+    }
+    area.appendChild(el);
+  });
+}
+
+function getCardEl(id) { return document.getElementById(`card-${id}`); }
+
+// ============================================================
+// 点击卡牌
+// ============================================================
+function clickCard(cardId) {
+  const card = gameState.cards.find(c => c.id === cardId);
+  if (!card || card.blocked || card.eliminated) return;
+  if (gameState.slots.length >= SLOT_MAX) return;
+
+  // 添加选中效果
+  const el = getCardEl(cardId);
+  if (el) el.classList.add('selected');
+
+  // 飞入槽位动画
+  flyToSlot(card, el);
+}
+
+function flyToSlot(card, el) {
+  const slotIdx = gameState.slots.length;
+  const slotEl = document.getElementById(`slot-${slotIdx}`);
+  if (!slotEl || !el) {
+    addToSlot(card);
+    return;
+  }
+
+  const slotRect = slotEl.getBoundingClientRect();
+  const cardRect = el.getBoundingClientRect();
+
+  // 设置flying状态，变成fixed定位进行动画
+  el.classList.add('flying');
+  el.style.position = 'fixed';
+  el.style.left = cardRect.left + 'px';
+  el.style.top = cardRect.top + 'px';
+  el.style.zIndex = 99999;
+
+  requestAnimationFrame(() => {
+    el.style.left = slotRect.left + 'px';
+    el.style.top = slotRect.top + 'px';
+  });
+
+  setTimeout(() => {
+    el.remove();
+    addToSlot(card);
+  }, 420);
+}
+
+function addToSlot(card) {
+  card.eliminated = true;
+  gameState.slots.push({ ...card });
+
+  // 重新计算遮挡
+  updateBlockedState();
+  renderCards();
+  renderSlots();
+
+  // 检查匹配
+  setTimeout(() => checkMatch(), 50);
+}
+
+// ============================================================
+// 槽位渲染
+// ============================================================
+function renderSlots() {
+  for (let i = 0; i < SLOT_MAX; i++) {
+    const slotEl = document.getElementById(`slot-${i}`);
+    slotEl.innerHTML = '';
+    slotEl.className = 'slot';
+    const card = gameState.slots[i];
+    if (card) {
+      slotEl.classList.add('has-card');
+      const inner = document.createElement('div');
+      inner.className = `slot-card ${card.part === 'front' ? 'front-part' : 'back-part'}`;
+      inner.id = `slot-card-${i}`;
+      inner.textContent = card.text;
+      slotEl.appendChild(inner);
+    }
+  }
+}
+
+// ============================================================
+// 匹配检测
+// ============================================================
+function checkMatch() {
+  const slots = gameState.slots;
+  if (slots.length < 2) {
+    checkFail();
+    return;
+  }
+
+  // 找同成语的front+back配对
+  let frontIdx = -1, backIdx = -1;
+  for (let i = 0; i < slots.length; i++) {
+    for (let j = i + 1; j < slots.length; j++) {
+      if (slots[i].chengyu === slots[j].chengyu &&
+          ((slots[i].part === 'front' && slots[j].part === 'back') ||
+           (slots[i].part === 'back' && slots[j].part === 'front'))) {
+        frontIdx = i;
+        backIdx = j;
+        break;
+      }
+    }
+    if (frontIdx >= 0) break;
+  }
+
+  if (frontIdx >= 0) {
+    // 配对成功
+    const matchedChengyu = slots[frontIdx].chengyu;
+    triggerMatchEffect(frontIdx, backIdx, matchedChengyu);
+  } else {
+    checkFail();
+  }
+}
+
+function triggerMatchEffect(i, j, chengyu) {
+  const hi = Math.max(i, j);
+  const lo = Math.min(i, j);
+  const elHi = document.getElementById(`slot-card-${hi}`);
+  const elLo = document.getElementById(`slot-card-${lo}`);
+
+  if (elHi) elHi.classList.add('eliminating');
+  if (elLo) elLo.classList.add('eliminating');
+
+  // 高亮槽位
+  document.getElementById(`slot-${hi}`).classList.add('matching');
+  document.getElementById(`slot-${lo}`).classList.add('matching');
+
+  // 粒子效果
+  const slotArea = document.getElementById(`slot-${lo}`);
+  const rect = slotArea.getBoundingClientRect();
+  spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2);
+
+  // 闪光
+  const flash = document.getElementById('flashOverlay');
+  flash.classList.add('active');
+  setTimeout(() => flash.classList.remove('active'), 200);
+
+  // 得分
+  const levelCfg = gameState.isDaily ? { pointPerPair: 500 } : LEVELS[gameState.level];
+  gameState.score += levelCfg.pointPerPair;
+  gameState.clearedPairs++;
+  document.getElementById('header-score').textContent = gameState.score;
+
+  // 得分弹出
+  spawnScorePopup(rect.left + rect.width/2, rect.top, '+' + levelCfg.pointPerPair);
+
+  setTimeout(() => {
+    // 移除已匹配的槽位卡牌
+    gameState.slots.splice(hi, 1);
+    gameState.slots.splice(lo, 1);
+    renderSlots();
+    updateProgress();
+
+    // 显示成语学习提示
+    showIdiomToast(chengyu);
+
+    // 检查胜利
+    if (gameState.clearedPairs >= gameState.totalPairs) {
+      setTimeout(() => triggerWin(), 600);
+    }
+  }, 500);
+}
+
+// ============================================================
+// 失败检测
+// ============================================================
+function checkFail() {
+  if (gameState.slots.length >= SLOT_MAX) {
+    // 槽满且无匹配
+    const hasNoMatch = !checkHasMatch();
+    if (hasNoMatch) {
+      setTimeout(() => triggerFail(), 300);
+    }
+  }
+}
+
+function checkHasMatch() {
+  const slots = gameState.slots;
+  for (let i = 0; i < slots.length; i++) {
+    for (let j = i + 1; j < slots.length; j++) {
+      if (slots[i].chengyu === slots[j].chengyu &&
+          ((slots[i].part === 'front' && slots[j].part === 'back') ||
+           (slots[i].part === 'back' && slots[j].part === 'front'))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function triggerFail() {
+  document.getElementById('fail-score').textContent = gameState.score;
+  showModal('fail-modal');
+}
+
+// ============================================================
+// 胜利
+// ============================================================
+function triggerWin() {
+  const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+  const levelCfg = gameState.isDaily ? { hintCount: 0 } : LEVELS[gameState.level];
+  const hints = gameState.hints;
+  let stars = 1;
+  if (elapsed < 120 && hints >= levelCfg.hintCount - 1) stars = 3;
+  else if (elapsed < 240) stars = 2;
+
+  // 保存存档
+  if (!gameState.isDaily) {
+    const idx = gameState.level;
+    if ((saveData.levelStars[idx] || 0) < stars) saveData.levelStars[idx] = stars;
+  } else {
+    saveData.dailyClearDate = getTodayStr();
+  }
+  if (gameState.score > (saveData.bestScore || 0)) saveData.bestScore = gameState.score;
+  writeSave();
+
+  // 显示通关页
+  const starStr = ['', '★☆☆', '★★☆', '★★★'];
+  document.getElementById('result-title').textContent = gameState.isDaily ? '每日挑战通关！' : '恭喜通关！';
+  document.getElementById('result-stars').textContent = starStr[stars];
+  document.getElementById('result-score-val').textContent = gameState.score;
+
+  // 成语回顾
+  const list = document.getElementById('result-idiom-list');
+  list.innerHTML = '';
+  gameState.usedIdioms.forEach(idiom => {
+    const item = document.createElement('div');
+    item.className = 'idiom-item';
+    item.innerHTML = `<div class="idiom-word">${idiom.w}</div><div class="idiom-def">${idiom.d}</div>`;
+    list.appendChild(item);
+  });
+
+  // 下一关按钮
+  const nextBtn = document.getElementById('next-level-btn');
+  if (!gameState.isDaily && gameState.level < 3) {
+    nextBtn.style.display = '';
+  } else {
+    nextBtn.style.display = 'none';
+  }
+
+  showPage('result-page');
+}
+
+// ============================================================
+// 提示功能
+// ============================================================
+function useHint() {
+  if (gameState.hints <= 0) return;
+  // 找一对已存在于牌堆中、未遮挡的配对
+  const available = gameState.cards.filter(c => !c.eliminated && !c.blocked);
+  let pair = null;
+  for (let i = 0; i < available.length; i++) {
+    const match = available.find((c, j) => j !== i && c.chengyu === available[i].chengyu && c.part !== available[i].part);
+    if (match) { pair = [available[i], match]; break; }
+  }
+  if (!pair) {
+    // 找遮挡中的
+    const all = gameState.cards.filter(c => !c.eliminated);
+    for (let i = 0; i < all.length; i++) {
+      const match = all.find((c, j) => j !== i && c.chengyu === all[i].chengyu && c.part !== all[i].part);
+      if (match) { pair = [all[i], match]; break; }
+    }
+  }
+  if (!pair) return;
+
+  gameState.hints--;
+  document.getElementById('hint-count').textContent = gameState.hints;
+  if (gameState.hints <= 0) document.getElementById('hint-btn').style.opacity = '0.3';
+
+  pair.forEach(card => {
+    const el = getCardEl(card.id);
+    if (el) {
+      el.classList.add('hint-glow');
+      setTimeout(() => el.classList.remove('hint-glow'), 3100);
+    }
+  });
+}
+
+// ============================================================
+// 进度更新
+// ============================================================
+function updateProgress() {
+  const pct = gameState.totalPairs > 0 ? (gameState.clearedPairs / gameState.totalPairs) * 100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${gameState.clearedPairs} / ${gameState.totalPairs}`;
+}
+
+// ============================================================
+// 粒子效果
+// ============================================================
+function spawnParticles(cx, cy) {
+  const colors = ['#FFD700', '#D4A853', '#FF6B6B', '#90EE90', '#FFB6C1'];
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (Math.PI * 2 * i) / 16;
+    const dist = 40 + Math.random() * 60;
+    p.style.cssText = `
+      left: ${cx - 3}px; top: ${cy - 3}px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      --dx: ${Math.cos(angle) * dist}px;
+      --dy: ${Math.sin(angle) * dist}px;
+    `;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+}
+
+function spawnScorePopup(cx, cy, text) {
+  const el = document.createElement('div');
+  el.className = 'score-popup';
+  el.textContent = text;
+  el.style.cssText = `left: ${cx - 20}px; top: ${cy - 20}px;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+// ============================================================
+// 成语提示Toast
+// ============================================================
+let toastTimer = null;
+function showIdiomToast(chengyu) {
+  const idiom = IDIOMS.find(i => i.w === chengyu);
+  if (!idiom) return;
+  let toast = document.getElementById('idiom-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'idiom-toast';
+    toast.style.cssText = `
+      position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+      background: rgba(26,26,46,0.95); border: 1px solid rgba(212,168,83,0.5);
+      border-radius: 10px; padding: 10px 18px; z-index: 9999;
+      max-width: 280px; text-align: center; backdrop-filter: blur(10px);
+      transition: opacity 0.3s; font-family: 'Noto Serif SC', serif;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<div style="font-size:16px;font-weight:700;color:#FFD700;margin-bottom:4px;">${idiom.w}</div>
+    <div style="font-size:12px;color:rgba(245,230,208,0.7);line-height:1.5;">${idiom.d}</div>`;
+  toast.style.opacity = '1';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+}
+
+// ============================================================
+// 重玩/下一关
+// ============================================================
+function replayLevel() {
+  closeModal('fail-modal');
+  if (gameState.isDaily) startDaily();
+  else startLevel(gameState.level);
+}
+function nextLevel() {
+  if (!gameState.isDaily && gameState.level < 3) startLevel(gameState.level + 1);
+}
+
+// ============================================================
+// 水墨背景粒子
+// ============================================================
+function initInkBg() {
+  const bg = document.getElementById('inkBg');
+  for (let i = 0; i < 6; i++) {
+    const c = document.createElement('div');
+    c.className = 'ink-circle';
+    const size = 200 + Math.random() * 400;
+    c.style.cssText = `
+      width: ${size}px; height: ${size}px;
+      left: ${Math.random() * 100}%; top: ${Math.random() * 100}%;
+      animation-delay: ${Math.random() * 8}s;
+      animation-duration: ${6 + Math.random() * 6}s;
+    `;
+    bg.appendChild(c);
+  }
+}
+
+// ============================================================
+// 初始化
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  initInkBg();
+  loadSave();
+  showPage('home-page');
+  // 防止移动端双击缩放
+  document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+  // 防止移动端pull to refresh
+  document.body.addEventListener('touchmove', e => {
+    if (e.target.closest('#card-area') || e.target.closest('.result-idioms')) return;
+    e.preventDefault();
+  }, { passive: false });
+});
+</script>
+</body>
+</html>
